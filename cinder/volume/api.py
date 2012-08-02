@@ -168,8 +168,7 @@ class API(base.Base):
     def get_all(self, context, search_opts=None):
         check_policy(context, 'get_all')
 
-        if search_opts is None:
-            search_opts = {}
+        search_opts = search_opts or {}
 
         if (context.is_admin and 'all_tenants' in search_opts):
             volumes = self.db.volume_get_all(context)
@@ -177,37 +176,35 @@ class API(base.Base):
             volumes = self.db.volume_get_all_by_project(context,
                                                         context.project_id)
 
+
         if search_opts:
-            LOG.debug(_("Searching by: %s") % str(search_opts))
+            filters = {}
+            return self.db.instance_get_all_by_filters(context, filters, sort_key, sort_dir)
 
-            def _check_metadata_match(volume, searchdict):
-                volume_metadata = {}
-                for i in volume.get('volume_metadata'):
-                    volume_metadata[i['key']] = i['value']
-
-                for k, v in searchdict.iteritems():
-                    if (k not in volume_metadata.keys() or
-                        volume_metadata[k] != v):
-                        return False
-                return True
-
-            # search_option to filter_name mapping.
-            filter_mapping = {'metadata': _check_metadata_match}
-
-            result = []
-            for volume in volumes:
-                # go over all filters in the list
-                for opt, values in search_opts.iteritems():
-                    try:
-                        filter_func = filter_mapping[opt]
-                    except KeyError:
-                        # no such filter - ignore it, go to next filter
-                        continue
+            for opt, value in search_opts.iteritems():
+                # Do remappings.
+                # Values not in the filter_mapping table are copied as-is.
+                # If remapping is None, option is not copied
+                # If the remapping is a string, it is the filter_name to use
+                try:
+                    remap_object = filter_mapping[opt]
+                except KeyError:
+                    filters[opt] = value
+                else:
+                    # Remaps are strings to translate to, or functions to call
+                    # to do the translating as defined by the table above.
+                    if isinstance(remap_object, basestring):
+                        filters[remap_object] = value
                     else:
-                        if filter_func(volume, values):
-                            result.append(volume)
-                            break
-            volumes = result
+                        try:
+                            remap_object(value)
+
+                        # We already know we can't match the filter, so
+                        # return an empty list
+                        except ValueError:
+                            return []
+
+
         return volumes
 
     def get_snapshot(self, context, snapshot_id):

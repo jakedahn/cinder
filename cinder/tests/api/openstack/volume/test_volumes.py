@@ -36,6 +36,10 @@ class VolumeApiTest(test.TestCase):
         super(VolumeApiTest, self).setUp()
         self.controller = volumes.VolumeController()
 
+        self.stubs.Set(db, 'volume_get_all', fakes.stub_volume_get_all)
+        self.stubs.Set(db, 'volume_get_all_by_project',
+                       fakes.stub_volume_get_all_by_project)
+
         self.stubs.Set(volume_api.API, 'get', fakes.stub_volume_get)
         self.stubs.Set(volume_api.API, 'delete', fakes.stub_volume_delete)
 
@@ -204,8 +208,6 @@ class VolumeApiTest(test.TestCase):
 
 
     def test_admin_list_volumes_limited_to_project(self):
-        self.stubs.Set(volume_api.API, 'get_all',
-                       fakes.stub_volume_get_all_by_project)
         req = fakes.HTTPRequest.blank('/v2/fake/volumes',
                                       use_admin_context=True)
         res = self.controller.index(req)
@@ -215,8 +217,6 @@ class VolumeApiTest(test.TestCase):
 
 
     def test_admin_list_volumes_all_tenants(self):
-        self.stubs.Set(volume_api.API, 'get_all', fakes.stub_volume_get_all)
-        self.stubs.Set(db, 'volume_get_all', fakes.stub_volume_get_all)
         req = fakes.HTTPRequest.blank('/v2/fake/volumes?all_tenants=1',
                                       use_admin_context=True)
         res = self.controller.index(req)
@@ -225,8 +225,6 @@ class VolumeApiTest(test.TestCase):
 
 
     def test_all_tenants_non_admin_gets_all_tenants(self):
-        self.stubs.Set(volume_api.API, 'get_all',
-                       fakes.stub_volume_get_all_by_project)
         req = fakes.HTTPRequest.blank('/v2/fake/volumes?all_tenants=1')
         res = self.controller.index(req)
         self.assertTrue('volumes' in res)
@@ -234,13 +232,21 @@ class VolumeApiTest(test.TestCase):
 
 
     def test_non_admin_get_by_project(self):
-        self.stubs.Set(volume_api.API, 'get_all',
-                       fakes.stub_volume_get_all_by_project)
         req = fakes.HTTPRequest.blank('/v2/fake/volumes')
         res = self.controller.index(req)
         self.assertTrue('volumes' in res)
         self.assertEqual(1, len(res['volumes']))
 
+
+    def test_volumes_search_by_status(self):
+        self.stubs.Set(db, 'volume_get_all_by_project',
+                       fakes.stub_volume_get_all_status_test)
+        req = fakes.HTTPRequest.blank('/v2/fake/volumes?status=almostreal')
+        res = self.controller.index(req)
+        self.assertTrue('volumes' in res)
+        self.assertEqual(1, len(res['volumes']))
+        # from nose.tools import set_trace; set_trace()
+        self.assertEqual('almostreal', res['volumes'][0]['status'])
 
 class VolumeSerializerTest(test.TestCase):
     def _verify_volume_attachment(self, attach, tree):

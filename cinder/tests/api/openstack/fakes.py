@@ -231,11 +231,16 @@ def stub_volume_get_notfound(self, context, volume_id):
     raise exc.NotFound
 
 
-def stub_volume_get_all(self, context, search_opts=None):
+def stub_volume_get_all(context, search_opts=None):
   return [stub_volume(100, project_id='fake'),
           stub_volume(101, project_id='superfake'),
-          stub_volume(102, project_id='superduperfake')]
+          stub_volume(102, project_id='superduperfake', status="fakestatus")]
 
 
 def stub_volume_get_all_by_project(self, context, search_opts=None):
     return [stub_volume_get(self, context, '1')]
+
+
+def stub_volume_get_all_status_test(self, context, search_opts=None):
+    return [stub_volume(1), stub_volume(2, status="almostreal")]
+

@@ -207,17 +207,6 @@ class VolumeController(object):
         remove_invalid_options(context,
                                search_opts,
                                self._get_volume_search_options())
-
-        # Verify search by 'status' contains a valid status.
-        # Convert it to filter by vm_state for compute_api.
-        status = search_opts.pop('status', None)
-        if status is not None:
-            state = common.vm_state_from_status(status)
-            if state is None:
-                msg = _('Invalid server status: %(status)s') % locals()
-                raise exc.HTTPBadRequest(explanation=msg)
-            search_opts['vm_state'] = state
-
         volumes = self.volume_api.get_all(context, search_opts=search_opts)
         limited_list = common.limited(volumes, req)
         res = [entity_maker(context, vol) for vol in limited_list]
@@ -281,7 +270,7 @@ class VolumeController(object):
 
     def _get_volume_search_options(self):
         """Return volume search options allowed by non-admin."""
-        return ('name', 'status', 'changes-since')
+        return ('name', 'status')
 
 def create_resource():
     return wsgi.Resource(VolumeController())
