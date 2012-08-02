@@ -218,14 +218,6 @@ class VolumeController(object):
                 raise exc.HTTPBadRequest(explanation=msg)
             search_opts['vm_state'] = state
 
-        if 'changes-since' in search_opts:
-            try:
-                parsed = timeutils.parse_isotime(search_opts['changes-since'])
-            except ValueError:
-                msg = _('Invalid changes-since value')
-                raise exc.HTTPBadRequest(explanation=msg)
-            search_opts['changes-since'] = parsed
-
         volumes = self.volume_api.get_all(context, search_opts=search_opts)
         limited_list = common.limited(volumes, req)
         res = [entity_maker(context, vol) for vol in limited_list]

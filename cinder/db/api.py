@@ -254,11 +254,6 @@ def volume_get_all_by_project(context, project_id):
     return IMPL.volume_get_all_by_project(context, project_id)
 
 
-def volume_get_all_by_user(context, user_id):
-    """Get all volumes belonging to a user."""
-    return IMPL.volume_get_all_by_user(context, user_id)
-
-
 def volume_get_iscsi_target_num(context, volume_id):
     """Get the target num (tid) allocated to the volume."""
     return IMPL.volume_get_iscsi_target_num(context, volume_id)

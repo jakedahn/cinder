@@ -543,11 +543,6 @@ def volume_get_all_by_project(context, project_id):
     return _volume_get_query(context).filter_by(project_id=project_id).all()
 
 
-@require_context
-def volume_get_all_by_user(context, user_id):
-    return _volume_get_query(context).filter_by(user_id=user_id).all()
-
-
 @require_admin_context
 def volume_get_iscsi_target_num(context, volume_id):
     result = model_query(context, models.IscsiTarget, read_deleted="yes").\
